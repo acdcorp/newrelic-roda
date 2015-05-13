@@ -57,7 +57,7 @@ module NewRelic
             base.include ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
           end
 
-          def call(env, &block)
+          def call(&block)
             super
           rescue => error
             ::NewRelic::Agent.notice_error(error)

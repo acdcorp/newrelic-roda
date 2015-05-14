@@ -14,6 +14,20 @@ module NewRelic
           include ::NewRelic::Agent::MethodTracer
           add_method_tracer :match_all
 
+          def block_result(result)
+            begin
+              txn_name = _route_name
+              unless txn_name.nil?
+                ::NewRelic::Agent::Transaction.set_default_transaction_name(
+                    "#{self.class.name}/#{txn_name}", :category => :sinatra)
+              end
+            rescue => e
+              ::NewRelic::Agent.logger.debug("Failed during route_eval to set transaction name", e)
+            end
+
+            super
+          end
+
           private
 
           def if_match(args, &block)
@@ -33,22 +47,9 @@ module NewRelic
             all
           end
 
-          def block_result(result)
-            begin
-              txn_name = _route_name
-              unless txn_name.nil?
-                ::NewRelic::Agent::Transaction.set_default_transaction_name(
-                    "#{self.class.name}/#{txn_name}", :category => :sinatra)
-              end
-            rescue => e
-              ::NewRelic::Agent.logger.debug("Failed during route_eval to set transaction name", e)
-            end
-
-            super
-          end
-
           def _route_name
-            "#{request_method} #{env.fetch('new_relic.roda',['/']).join('/')}"
+            request.path
+            # "#{request_method} #{env.fetch('new_relic.roda',['/']).join('/')}"
           end
         end
 
